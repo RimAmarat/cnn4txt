@@ -14,23 +14,34 @@ def train(train_iter, dev_iter, model, args):
     steps = 0
     best_acc = 0
     last_step = 0
-    for epoch in range(1, args.epochs+1):
+    #print(0)
+    for epoch in range(args.epochs):
+        #print(1)
         for batch in train_iter:
+            #print(2)
             model.train()
             feature, target = batch.text, batch.label
             feature.t_(), target.sub_(1)  # batch first, index align
             if args.cuda:
                 feature, target = feature.cuda(), target.cuda()
 
+            target = target.long()
             optimizer.zero_grad()
             logit = model(feature)
-            loss = F.cross_entropy(logit, target)
+            probs = F.softmax(logit, dim=1)
+
+            loss = F.cross_entropy(probs, target.long(), reduction='sum')
+            #loss = F.cross_entropy(logit, target)
             loss.backward()
             optimizer.step()
 
+            
             steps += 1
             if steps % args.log_interval == 0:
                 corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+                #print('target ', target)
+                #print("logit", logit)
+                #print('logit indx', torch.max(logit, 1)[1])
                 accuracy = 100.0 * corrects/batch.batch_size
                 sys.stdout.write(
                     '\rBatch[{}] - loss: {:.6f}  acc: {:.4f}%({}/{})'.format(steps, 
@@ -62,7 +73,10 @@ def eval(data_iter, model, args):
             feature, target = feature.cuda(), target.cuda()
 
         logit = model(feature)
-        loss = F.cross_entropy(logit, target, size_average=False)
+        probs = F.softmax(logit, dim=1)
+
+        loss = F.cross_entropy(probs, target.long(), reduction='sum')
+        #loss = F.cross_entropy(logit, target, size_average=False)
 
         avg_loss += loss.item()
         corrects += (torch.max(logit, 1)

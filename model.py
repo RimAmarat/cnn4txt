@@ -13,6 +13,7 @@ class CNN_Text(nn.Module):
         V = args.embed_num
         D = args.embed_dim
         C = args.class_num
+        #print("C -> ", C)
         Ci = 1
         Co = args.kernel_num
         Ks = args.kernel_sizes
@@ -38,4 +39,7 @@ class CNN_Text(nn.Module):
 
         x = self.dropout(x)  # (N, len(Ks)*Co)
         logit = self.fc1(x)  # (N, C)
+
+
+        #print("logit shape ", logit)
         return logit
